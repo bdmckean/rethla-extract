@@ -1,0 +1,58 @@
+.app {
+  text-align: left;
+  padding: 2rem 1.5rem 3rem;
+  max-width: 40rem;
+}
+
+.app-header h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+}
+
+.tagline {
+  margin: 0;
+  color: var(--text);
+  opacity: 0.92;
+}
+
+.panel {
+  margin-top: 2rem;
+  padding: 1.25rem 1.35rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--social-bg);
+}
+
+.panel h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.panel p {
+  margin: 0.5rem 0;
+}
+
+.ok {
+  color: var(--text-h);
+}
+
+.err {
+  color: #b91c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+  .err {
+    color: #fca5a5;
+  }
+}
+
+.muted {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.muted a {
+  color: var(--accent);
+}

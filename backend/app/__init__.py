@@ -1,0 +1,1 @@
+"""Transcript App FastAPI backend."""
