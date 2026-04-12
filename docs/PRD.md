@@ -1,7 +1,7 @@
 # Product Requirements Document: Transcript App
 
 **Status:** Draft  
-**Last updated:** 2025-03-23 (v0.6 — platform self-hosting deployment)
+**Last updated:** 2026-04-01 (v0.9 — Phase 2 local UI: progress, ETA, completed extractions)
 
 ## 1. Summary
 
@@ -12,6 +12,24 @@ The **hosted (web) product** requires **authentication**; **per-user usage** is 
 **Localization (MVP):** The product ships with **English** and **Spanish** for both the **user interface** and **user-facing extraction output** (labels, errors, buttons, transcript header field names where localized). **Audio language** is **not** chosen manually for transcription: the pipeline **detects** language automatically (see §5.8 and §10).
 
 **Hosted deployment:** Production deployments target the **self-hosted platform** defined in the separate infrastructure PRD (see **§5.15**): shared **Coolify/Docker**, **Traefik/Caddy**, **PostgreSQL**, **Redis**, **MinIO**, **Stripe**, unified **auth**, and observability—not ad-hoc PaaS unless explicitly overridden.
+
+### 1.1 Delivery phases (build sequence)
+
+Development proceeds in **seven** phases. Later phases build on the core extraction logic from Phase 1; the full product vision (localization, WhisperX pipeline, hosted deployment, billing, etc.) remains documented in this PRD.
+
+**Phases 1–4 run locally** on the developer machine (or equivalent local environment): no requirement to expose the app on the public internet until Phase 5.
+
+| Phase | Scope |
+|-------|--------|
+| **1 — CLI** | A **script** invoked from the command line: **source file** (input audio) and **output directory** as arguments. Establishes the transcription pipeline, output format, and naming/collision behavior without a graphical UI. |
+| **2 — UI** | A **user interface** to choose **one or more input files** and an **output directory** (local folder selection). **Extraction progress** (phase, percent, elapsed time, **best-effort remaining time**), and a **list of completed extractions** (see **§5.4.1**). No user authentication in this phase unless already required by the chosen stack. |
+| **3 — Auth and accounts** | **End-user authentication** (sign-in, sessions, per-user data) per **§5.10**. Scopes jobs and transcripts to the authenticated user; **no** admin panel until Phase 4. |
+| **4 — Admin panel** | **Administrator** UI for **user management** (list/search users, account state, usage visibility, complimentary limits where applicable) per **§5.14**—distinct from the normal user experience. |
+| **5 — Internet deployment** | Deploy the application so it is **reachable on the internet** (staging or production URL). Validates hosting, TLS, routing, and operational basics before monetization. |
+| **6 — Payments** | **Billing and payments** integration (e.g., Stripe) per **§5.12–§5.13**, usage alignment with **§5.11**, and user-visible pricing and payment status. |
+| **7 — App platform deployment** | Run the hosted product on the **shared self-hosting platform** (**§5.15**): Coolify/Docker, Traefik/Caddy, Postgres, Redis, MinIO, Stripe, shared auth, workers, observability—so operations match the multi-app platform rather than ad-hoc hosting. |
+
+**Phases 1–6 as a learning loop:** They are used to **evaluate** the full **internet stack** and **deployment mechanisms** (how the app is built, shipped, configured, and operated online). **Phases 5 and 6 may be iterated** (repeated or refined) until the team has a clear, **cost-effective** and **time-efficient** way to implement **Phase 7** on the app platform. Phase 7 is not a hard deadline immediately after a single pass of 5–6; it follows confidence in the approach.
 
 ## 2. Goals
 
@@ -69,6 +87,37 @@ Open product decisions to lock in build phase:
 - User can **define naming** for outputs (e.g., pattern based on source filename, timestamp, or custom template). Default naming should be predictable (e.g., `{original_basename}_transcript.txt`).
 - Multiple inputs should not silently overwrite: **collision handling** (suffix, prompt, or skip) must be specified in implementation.
 
+### 5.4.1 Phase 2 — Local UI: extraction flow, progress, and completed outputs
+
+This subsection refines **Phase 2** (§1.1) for **local** development (Vite + FastAPI on the machine with filesystem access). **Hosted web** behavior differs (upload/download, no arbitrary paths)—see §7 open questions.
+
+**File selection and output**
+
+- User selects **one or more audio files** and a **single output directory** (folder picker or equivalent); aligns with §5.1 and §5.4.
+- Default **output naming** matches §5.4 (e.g. `{original_basename}_transcript.txt`); collision rules unchanged.
+
+**Progress during extraction**
+
+- While a job runs, the UI shows **non-blocking** progress (not only a spinner). Minimum signals:
+  - **Pipeline phase:** `transcribe` → `align` → `diarize` → `finalize` (or equivalent labels aligned with §10).
+  - **Percent complete** within the current phase when the backend provides it (or indeterminate state only if the engine cannot report progress).
+  - **Elapsed time** since the job started.
+- **Remaining time (ETA)** is **best-effort**: optional, derived from progress callbacks and elapsed time (e.g. linear extrapolation by phase, rolling estimate by audio minutes). The UI must **not** imply guaranteed accuracy; copy may say “estimate” / “aproximado” (localized per §5.7).
+- **Transport:** Server-Sent Events (SSE), WebSocket, or **polling** a job status endpoint; implementation choice. Events should carry at least `phase`, `percent` (0–100 when available), `elapsed_sec`, optional `eta_sec`, and `message` for errors.
+
+**Completed extractions**
+
+- The UI surfaces **files that already have a completed transcript** for the chosen output directory (or configured app “output root”): e.g. **pairing** `{basename}.m4a` / `{basename}.aac` with `{basename}_transcript.txt` (or matching naming convention from §5.4), and listing **metadata** such as filename, completed-at time if available, and path to open.
+- **Discovery rule** is implementation-defined: **scan the output directory** for `*_transcript.txt` (or configured pattern) and match stems to known audio in the same folder, **or** maintain a small **manifest** (JSON/CSV) written alongside outputs; pick one and document.
+
+**Localization**
+
+- Progress labels, ETA disclaimer, empty states (“no extractions yet”), and errors follow **§5.6–5.7** (EN/ES).
+
+**Out of scope for Phase 2 UI**
+
+- User accounts, cloud sync, and server-side job history beyond what the local filesystem provides (see Phase 3+).
+
 ### 5.5 Deployment modes
 
 - **Local:** Runs on the user’s machine; file system access for reading inputs and writing to a user-chosen directory. **Account, metering, and billing** for local builds are **TBD** (§7)—may mirror cloud or use a separate license model.
@@ -101,7 +150,7 @@ End users who “run locally” without contributing code may use the same Compo
 
 ### 5.7 Localized extraction output
 
-- **User-visible strings** produced by the extraction flow (status messages, error text, optional progress copy, and **localized labels in the transcript header** where the PRD calls for human-readable titles) must exist in **English and Spanish** and follow the **same UI language** selection as §5.6, unless we explicitly define a separate “output language” (default: **same as UI**).
+- **User-visible strings** produced by the extraction flow (status messages, error text, **progress and ETA labels** per **§5.4.1**, and **localized labels in the transcript header** where the PRD calls for human-readable titles) must exist in **English and Spanish** and follow the **same UI language** selection as §5.6, unless we explicitly define a separate “output language” (default: **same as UI**).
 - Raw transcript lines may remain **language-agnostic** (timestamps + `SPEAKER_XX` + text); header titles such as “Speakers” / “Hablantes” should follow locale.
 - **Internal logs / developer diagnostics** may stay English-only unless product asks otherwise.
 
@@ -237,6 +286,9 @@ That document defines **multi-app** self-hosted infrastructure (e.g., **Coolify*
 | 0.4 | 2025-03-23 | Local development via Docker (default dev path); GPU/macOS hybrid notes; volumes, secrets, CI parity |
 | 0.5 | 2025-03-23 | Local dev: **uv** or **Poetry** for Python/lockfile; Docker for services and optional full stack; hybrid default on macOS |
 | 0.6 | 2025-03-23 | **§5.15** — Deploy on shared self-hosting platform PRD (Coolify, Traefik/Caddy, Postgres, Redis, MinIO, Stripe, shared auth, workers, CI/CD); component mapping |
+| 0.7 | 2025-03-26 | **§1.1** — Delivery phases: Phase 1 CLI (source + output dir); Phase 2 UI (multi-file + output dir); Phase 3 auth and user management |
+| 0.8 | 2025-03-26 | **§1.1** — Phases 4–7: admin panel; internet deploy; payments; app platform (**§5.15**); Phases 1–4 local; Phases 1–6 evaluate stack + iterate on 5–6 before Phase 7 |
+| 0.9 | 2026-04-01 | **§5.4.1** — Phase 2 local UI: progress (phase, %, elapsed), best-effort ETA, SSE/WS/poll; completed extractions list; discovery rule; **§1.1** Phase 2 row updated |
 
 ## 10. Recommended implementation: WhisperX pipeline (`transcribe_v2` approach)
 

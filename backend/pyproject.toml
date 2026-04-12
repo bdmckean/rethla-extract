@@ -6,7 +6,11 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",
+    "python-multipart>=0.0.9",
+    "python-dotenv>=1.2.2",
+    "typer>=0.24.1",
     "uvicorn[standard]>=0.32.0",
+    "whisperx>=3.8.4",
 ]
 
 [project.optional-dependencies]
@@ -14,6 +18,9 @@ dev = [
     "httpx>=0.28.0",
     "pytest>=8.0.0",
 ]
+
+[project.scripts]
+transcript = "app.cli:cli_app"
 
 [build-system]
 requires = ["hatchling"]

@@ -11,6 +11,29 @@ Speaker-diarized transcripts from audio. See [`docs/PRD.md`](docs/PRD.md). **Hos
 
 Alternatives considered: **Next.js** if you need SSR for marketing pages; **Svelte/Vue** are fine but React has the widest library coverage for billing and admin patterns.
 
+## Phase 1 — CLI (local transcription)
+
+The default path is tuned for **Spanish** audio with possible **Catalan** (mixed speech): multilingual Whisper **`large-v3`**, ASR language **`es`** by default, and **Spanish** transcript headers. Use `--language auto` to detect language from the first ~30 seconds, or `--language ca` if you want to lock Catalan for the ASR pass.
+
+**Prerequisites:** **ffmpeg** on your `PATH`; a Hugging Face **read token** with access to the diarization models you use (`HF_TOKEN` or `HUGGINGFACE_TOKEN`). Copy [`backend/.env.example`](backend/.env.example) to `backend/.env` if you want to load the token from a file.
+
+Put test audio under the repo’s ignored **`data/`** directory (tracked as an empty tree via `data/.gitkeep`).
+
+```bash
+cd backend
+uv sync
+export HF_TOKEN=...   # or: cp .env.example .env  # then edit
+uv run transcript path/to/audio.m4a ../data/out
+```
+
+Options include `-l es` (default ASR language), `--locale es|en` (header labels), `-m large-v3`, and `--compute-type int8` on CPU if memory is tight.
+
+Progress and timing go to **stderr** (INFO by default: load steps, ~10% progress for transcribe / align / diarize). Use **`--verbose` / `-v`** for DEBUG (finer progress), or **`--quiet` / `-q`** for warnings only.
+
+After **alignment** completes, the CLI writes **`{stem}_after_align.json`** next to the transcript (in the output directory). If **diarization** fails later (e.g. Hugging Face access), re-run with **`--resume path/to/that.json`** and the **same** input audio to continue from diarization only—no second transcribe/align pass. Runs that failed *before* this checkpoint existed must complete transcribe+align once to produce the JSON.
+
+**Batching / timing table:** Run **one file per command** (same as now). Each successful run **appends one row** to **`extraction_timings.csv`** in the output directory (UTC timestamp, audio length, device, model, seconds per phase, transcript path). Use **`--timings-log /path/to/custom.csv`** to keep a single shared file (e.g. under `docs/`), or **`--no-timings-log`** to disable. Open the CSV in Numbers/Excel/Sheets.
+
 ## Quick start
 
 **Terminal 1 — API** (from repo root):
@@ -37,7 +60,8 @@ Open http://localhost:5173 — the Vite dev server **proxies** `/api` to the bac
 ## Layout
 
 ```
-backend/    # Python package `app`, FastAPI
+backend/    # Python package `app`, FastAPI + Phase 1 `transcript` CLI
 frontend/   # Vite React SPA
+data/       # Local audio/output (gitignored except .gitkeep)
 docs/       # PRD
 ```
