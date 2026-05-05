@@ -206,6 +206,32 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+# macOS / Windows (metadata files)
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Python — extra artifacts (see also: __pycache__, *.py[codz], .venv, eggs/wheels, .pytest_cache,
+# .mypy_cache, .ruff_cache, .tox, htmlcov, *.egg-info, build/, dist/, *.so, .pytype/, dmypy.json, etc. above)
+pip-wheel-metadata/
+*.db
+*.db-shm
+*.db-wal
+
 # Local data (audio e.g. .aac, transcripts, nested outputs) — only data/.gitkeep is tracked
 data/**
 !data/.gitkeep
+
+# Default UI / ad-hoc transcript output folder at repo root
+output/
+
+# Transcript outputs (see resolve_transcript_path: stem_transcript.txt, stem_transcript_1.txt, …)
+*_transcript.txt
+*_transcript_*.txt
+
+# Pipeline / CLI artifacts next to transcripts (checkpoints, timing log)
+*_after_align.json
+extraction_timings.csv
