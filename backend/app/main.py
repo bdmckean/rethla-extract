@@ -1,7 +1,14 @@
+import os
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health, jobs, output
+from app.api.routes import health, jobs, output, pick_folder, usage
+from app.db import init_db
+
+load_dotenv()
+os.environ.setdefault("DATABASE_URL", "sqlite:///./data/app.db")
 
 app = FastAPI(
     title="Transcript App API",
@@ -23,6 +30,13 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(jobs.router, prefix="/api/jobs")
 app.include_router(output.router, prefix="/api/output")
+app.include_router(pick_folder.router, prefix="/api/system")
+app.include_router(usage.router, prefix="/api/usage")
+
+
+@app.on_event("startup")
+def on_startup() -> None:
+    init_db()
 
 
 @app.get("/")

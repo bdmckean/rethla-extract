@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import FileResponse
 
 router = APIRouter(tags=["output"])
 
@@ -32,3 +33,30 @@ def list_completed(
         except OSError:
             continue
     return {"items": items}
+
+
+@router.get("/file")
+def read_transcript_file(
+    output_dir: str = Query(..., description="Absolute directory on the API host"),
+    name: str = Query(..., description="File name only (basename), e.g. audio_transcript.txt"),
+) -> FileResponse:
+    """Serve a transcript as ``text/plain`` so the browser can open it in a new tab."""
+    if "/" in name or "\\" in name:
+        raise HTTPException(status_code=400, detail="Invalid file name")
+    base = Path(output_dir).expanduser().resolve()
+    if not base.is_dir():
+        raise HTTPException(status_code=400, detail="Invalid output directory")
+    safe_name = Path(name).name
+    target = (base / safe_name).resolve()
+    try:
+        target.relative_to(base)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid path") from None
+    if not target.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(
+        path=target,
+        media_type="text/plain; charset=utf-8",
+        filename=safe_name,
+        content_disposition_type="inline",
+    )
