@@ -1,6 +1,10 @@
-# Transcript App
+# Rethlasoft Extract
 
 Speaker-diarized transcripts from audio. See [`docs/PRD.md`](docs/PRD.md). **Hosted production** targets the shared self-hosting platform described in **§5.15** (Coolify, Traefik/Caddy, Postgres, Redis, MinIO, Stripe, shared auth—see linked platform PRD there).
+
+## Privacy & Security
+
+**Rethlasoft Extract** is a **local-first utility**. All audio-to-text processing occurs on your local machine. No data is transmitted to or stored on external servers, making it suitable for sensitive legal and medical transcriptions. Your audio files and transcripts remain entirely under your control, ensuring compliance with privacy regulations and professional confidentiality requirements.
 
 ## Stack
 
