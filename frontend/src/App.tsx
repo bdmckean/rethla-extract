@@ -83,6 +83,22 @@ type CompletedItem = {
   modified: number
 }
 
+type SpeakersResponse = {
+  speakers: string[]
+}
+
+type RenameSpeakersResponse = {
+  name: string
+  path: string
+}
+
+type AuthUser = {
+  id: string
+  email: string
+  role: string
+  status: string
+}
+
 type UsageRun = {
   id: string
   job_id: string
@@ -109,11 +125,70 @@ type UsageSummary = {
 
 type UiLang = 'en' | 'es'
 
-const UI_STRINGS: Record<UiLang, Record<string, string>> = {
+type UiCopy = Record<string, string>
+
+const UI_STRINGS: Record<UiLang, UiCopy> = {
   en: {
     appTitle: 'Transcript App',
     appTagline: 'Speaker-attributed transcripts from audio',
     switchLanguage: 'ES',
+    navHome: 'Home',
+    navApp: 'Open app',
+    authTitle: 'Sign in',
+    authIntro: 'Create an account or sign in to use jobs, queue history, and user-scoped activity.',
+    authEmail: 'Email',
+    authPassword: 'Password',
+    authLogin: 'Sign in',
+    authRegister: 'Create account',
+    authSwitchToRegister: "Don't have an account? Create one",
+    authSwitchToLogin: 'Already have an account? Sign in',
+    authSigningIn: 'Signing in...',
+    authCreating: 'Creating account...',
+    authLogout: 'Sign out',
+    authRequired: 'Sign in required',
+    authWelcome: 'Signed in as',
+    authFailed: 'Authentication failed',
+    homeHeroTitle: 'Transcription runs on hardware you control',
+    homeHeroLead:
+      'Upload audio to your local API, pick an output folder, and download speaker-labeled transcripts. This page summarizes how data flows and what you need to run the stack.',
+    homeHowToTitle: 'How to use the service',
+    homeHowToLi1:
+      'Start the backend on the machine that will process audio (from the backend directory, e.g. run the API on 127.0.0.1:8000 per the backend README).',
+    homeHowToLi2:
+      'Start the web UI (e.g. npm run dev in the frontend folder) and open it in the browser. In development, requests to /api are proxied to the backend.',
+    homeHowToLi3:
+      'Click Open app (or add #app to the URL). Set Output directory to an absolute path on the API host where transcripts should be saved. Use Select folder when the native picker is available (local development).',
+    homeHowToLi4:
+      'Optionally enter a subfolder name and use Create & use to write outputs inside that folder.',
+    homeHowToLi5:
+      'Choose one or more audio files and pick the header locale (Spanish or English labels in the transcript text).',
+    homeHowToLi6:
+      'Click Start extraction. Jobs appear in the processing queue and run one after another. You can compact or expand the queue, reorder or cancel queued jobs, and clear completed or failed entries.',
+    homeHowToLi7:
+      'When processing finishes, open the transcript from the job row, from Completed transcripts, or from Recent activity. Use Assign speaker names on a listed file to save an extra copy with your custom speaker names.',
+    homeHowToLi8:
+      'Leave the API running until jobs finish. If the API restarts, active job state may be lost; refresh the completed list or activity after long runs.',
+    homePrivacyTitle: 'Privacy and your data',
+    homePrivacyP1:
+      'In the default local setup, audio you select is sent from the browser to the FastAPI backend you run (typically at http://127.0.0.1:8000). Processing happens on that same machine. Transcripts, checkpoints, and logs are written only to paths you configure (output directory, local database file, temp uploads on the API host).',
+    homePrivacyP2:
+      'The UI stores a browser session id (in localStorage) and may record basic usage metadata (e.g. run history) in a SQLite database on the API host, keyed to that session. Clear site data or use a private window if you want to reset the browser-side identifier.',
+    homePrivacyP3:
+      'This default configuration is not a multi-tenant cloud SaaS: your audio is not sent to a third-party transcription API unless you change the deployment. An internet-hosted product will publish separate Terms of Service and Privacy Policy and acceptance flows (see product PRD).',
+    homePrivacyP4:
+      'You are responsible for securing the machine, the network path to the API, backups, and any folders that contain audio or transcripts.',
+    homeReqTitle: 'System requirements (local development)',
+    homeReqLi1: 'Current desktop browser (recent Chrome, Firefox, Safari, or Edge).',
+    homeReqLi2:
+      'FastAPI backend running and reachable (default http://127.0.0.1:8000; Vite dev server proxies /api to it).',
+    homeReqLi3: 'macOS, Windows, or Linux on the machine that runs the Python stack.',
+    homeReqLi4: 'Python environment per backend README (uv recommended); WhisperX / PyTorch dependencies installed.',
+    homeReqLi5: 'RAM: at least 8 GB for lighter models; 16 GB or more recommended; large Whisper models need more headroom.',
+    homeReqLi6:
+      'GPU: optional; NVIDIA + CUDA typically speeds processing on Linux. On macOS, CPU or Apple Silicon acceleration depends on your build; GPU inside Docker on Mac is often impractical.',
+    homeReqLi7: 'ffmpeg available for audio decoding (as required by the underlying stack).',
+    homeReqLi8: 'Hugging Face token where diarization models require it (see backend documentation).',
+    homeReqLi9: 'Free disk space for model weights, temporary uploads, and transcript outputs.',
     extractTitle: 'Extract transcript',
     extractIntro:
       'Transcripts are written on the machine running the API. Use "Select folder..." for a native directory picker (local dev, loopback only). You can still type an absolute path. Upload sends audio to the server; one job at a time. This tab remembers the active job until you dismiss it or close the tab.',
@@ -184,6 +259,14 @@ const UI_STRINGS: Record<UiLang, Record<string, string>> = {
     enterOutputToList: 'Enter an output directory to list files.',
     noTranscriptsYet: 'No transcript files found yet.',
     refreshList: 'Refresh list',
+    assignSpeakers: 'Assign speaker names',
+    speakerNames: 'Speaker names',
+    saveSpeakerNames: 'Create named transcript',
+    loadingSpeakers: 'Loading speakers...',
+    noSpeakersDetected: 'No speaker labels detected in this transcript.',
+    speakerNamePlaceholder: 'Enter name',
+    renameSpeakersFailed: 'Could not save speaker names',
+    renamedTranscriptSaved: 'Saved named transcript',
     loadModel: 'Load model',
     transcribe: 'Transcribe',
     align: 'Align',
@@ -194,6 +277,64 @@ const UI_STRINGS: Record<UiLang, Record<string, string>> = {
     appTitle: 'App de Transcripciones',
     appTagline: 'Transcripciones de audio con hablantes',
     switchLanguage: 'EN',
+    navHome: 'Inicio',
+    navApp: 'Abrir aplicación',
+    authTitle: 'Iniciar sesión',
+    authIntro:
+      'Crea una cuenta o inicia sesión para usar trabajos, historial de cola y actividad asociada al usuario.',
+    authEmail: 'Correo',
+    authPassword: 'Contraseña',
+    authLogin: 'Entrar',
+    authRegister: 'Crear cuenta',
+    authSwitchToRegister: '¿No tienes cuenta? Créala',
+    authSwitchToLogin: '¿Ya tienes cuenta? Inicia sesión',
+    authSigningIn: 'Entrando...',
+    authCreating: 'Creando cuenta...',
+    authLogout: 'Cerrar sesión',
+    authRequired: 'Inicio de sesión requerido',
+    authWelcome: 'Sesión iniciada como',
+    authFailed: 'Falló la autenticación',
+    homeHeroTitle: 'La transcripción se ejecuta en equipos que tú controlas',
+    homeHeroLead:
+      'Sube audio a tu API local, elige una carpeta de salida y obtén transcripciones con hablantes. Esta página resume cómo circulan los datos y qué necesitas para ejecutar el sistema.',
+    homeHowToTitle: 'Cómo usar el servicio',
+    homeHowToLi1:
+      'Inicia el backend en la máquina que procesará el audio (desde la carpeta del backend, p. ej. API en 127.0.0.1:8000 según el README).',
+    homeHowToLi2:
+      'Inicia la interfaz web (p. ej. npm run dev en la carpeta frontend) y ábrela en el navegador. En desarrollo, las peticiones a /api se envían al backend mediante el proxy.',
+    homeHowToLi3:
+      'Pulsa Abrir aplicación (o añade #app a la URL). Indica el directorio de salida: una ruta absoluta en el host de la API donde guardar las transcripciones. Usa Seleccionar carpeta cuando haya selector nativo (desarrollo local).',
+    homeHowToLi4:
+      'Opcionalmente escribe el nombre de una subcarpeta y usa Crear y usar para escribir las salidas dentro de esa carpeta.',
+    homeHowToLi5:
+      'Elige uno o más archivos de audio y el idioma del encabezado (etiquetas en español o inglés en el texto de la transcripción).',
+    homeHowToLi6:
+      'Pulsa Iniciar extracción. Los trabajos aparecen en la cola y se ejecutan uno tras otro. Puedes compactar o expandir la cola, reordenar o cancelar trabajos en cola, y quitar completados o fallidos.',
+    homeHowToLi7:
+      'Al terminar, abre la transcripción desde la fila del trabajo, desde Transcripciones completadas o desde Actividad reciente. Usa Asignar nombres de hablantes en un archivo listado para guardar una copia adicional con tus nombres.',
+    homeHowToLi8:
+      'Mantén la API en ejecución hasta que terminen los trabajos. Si la API se reinicia, el estado de trabajos activos puede perderse; actualiza el listado o la actividad tras procesos largos.',
+    homePrivacyTitle: 'Privacidad y tus datos',
+    homePrivacyP1:
+      'En la configuración local habitual, el audio que eliges se envía desde el navegador al backend FastAPI que tú ejecutas (normalmente en http://127.0.0.1:8000). El procesamiento ocurre en esa misma máquina. Las transcripciones, puntos de control y registros se escriben solo en rutas que configures (directorio de salida, base de datos local, cargas temporales en el host de la API).',
+    homePrivacyP2:
+      'La interfaz guarda un id de sesión del navegador (en localStorage) y puede registrar metadatos básicos de uso (p. ej. historial de ejecuciones) en una base SQLite en el host de la API, asociados a esa sesión. Borra los datos del sitio o usa una ventana privada si quieres restablecer el identificador del navegador.',
+    homePrivacyP3:
+      'Esta configuración por defecto no es un SaaS multicliente en la nube: tu audio no se envía a una API de transcripción de terceros salvo que cambies el despliegue. Un producto alojado en Internet publicará Condiciones del servicio y Política de privacidad distintas y flujos de aceptación (véase el PRD del producto).',
+    homePrivacyP4:
+      'Eres responsable de asegurar el equipo, la ruta de red hacia la API, las copias de seguridad y las carpetas que contengan audio o transcripciones.',
+    homeReqTitle: 'Requisitos del sistema (desarrollo local)',
+    homeReqLi1: 'Navegador de escritorio actual (Chrome, Firefox, Safari o Edge recientes).',
+    homeReqLi2:
+      'Backend FastAPI en ejecución y accesible (por defecto http://127.0.0.1:8000; el servidor de desarrollo Vite enruta /api hacia él).',
+    homeReqLi3: 'macOS, Windows o Linux en la máquina que ejecuta la pila de Python.',
+    homeReqLi4: 'Entorno Python según el README del backend (se recomienda uv); dependencias WhisperX / PyTorch instaladas.',
+    homeReqLi5: 'RAM: al menos 8 GB para modelos ligeros; 16 GB o más recomendados; los modelos Whisper grandes necesitan más margen.',
+    homeReqLi6:
+      'GPU: opcional; NVIDIA + CUDA suele acelerar el proceso en Linux. En macOS, CPU o aceleración en Apple Silicon depende de tu build; la GPU dentro de Docker en Mac suele ser poco práctica.',
+    homeReqLi7: 'ffmpeg disponible para decodificación de audio (según lo requiera la pila subyacente).',
+    homeReqLi8: 'Token de Hugging Face cuando los modelos de diarización lo exijan (véase la documentación del backend).',
+    homeReqLi9: 'Espacio en disco para pesos del modelo, cargas temporales y transcripciones de salida.',
     extractTitle: 'Extraer transcripción',
     extractIntro:
       'Las transcripciones se escriben en la máquina que ejecuta la API. Usa "Seleccionar carpeta..." para abrir un selector nativo (desarrollo local, loopback). También puedes escribir una ruta absoluta. La carga envía el audio al servidor; un trabajo a la vez. Esta pestaña recuerda el trabajo activo hasta que lo cierres o lo descartes.',
@@ -264,6 +405,14 @@ const UI_STRINGS: Record<UiLang, Record<string, string>> = {
     enterOutputToList: 'Escribe un directorio de salida para listar archivos.',
     noTranscriptsYet: 'Aún no hay transcripciones.',
     refreshList: 'Actualizar lista',
+    assignSpeakers: 'Asignar nombres de hablantes',
+    speakerNames: 'Nombres de hablantes',
+    saveSpeakerNames: 'Crear transcripción con nombres',
+    loadingSpeakers: 'Cargando hablantes...',
+    noSpeakersDetected: 'No se detectaron etiquetas de hablante en esta transcripción.',
+    speakerNamePlaceholder: 'Escribe un nombre',
+    renameSpeakersFailed: 'No se pudieron guardar los nombres de hablantes',
+    renamedTranscriptSaved: 'Transcripción con nombres guardada',
     loadModel: 'Cargar modelo',
     transcribe: 'Transcribir',
     align: 'Alinear',
@@ -311,6 +460,71 @@ function transcriptFileUrl(outputDir: string, fileName: string): string {
     name: fileName.trim(),
   })
   return `/api/output/file?${q}`
+}
+
+function routeFromHash(): 'home' | 'app' {
+  const h = window.location.hash.replace(/^#\/?/, '')
+  return h === 'app' ? 'app' : 'home'
+}
+
+function HomeView({ t, onOpenApp }: { t: UiCopy; onOpenApp: () => void }) {
+  const howToSteps = [
+    t.homeHowToLi1,
+    t.homeHowToLi2,
+    t.homeHowToLi3,
+    t.homeHowToLi4,
+    t.homeHowToLi5,
+    t.homeHowToLi6,
+    t.homeHowToLi7,
+    t.homeHowToLi8,
+  ]
+  const privacyBlocks = [t.homePrivacyP1, t.homePrivacyP2, t.homePrivacyP3, t.homePrivacyP4]
+  const reqItems = [
+    t.homeReqLi1,
+    t.homeReqLi2,
+    t.homeReqLi3,
+    t.homeReqLi4,
+    t.homeReqLi5,
+    t.homeReqLi6,
+    t.homeReqLi7,
+    t.homeReqLi8,
+    t.homeReqLi9,
+  ]
+  return (
+    <main className="home-page">
+      <section className="panel home-hero">
+        <h2>{t.homeHeroTitle}</h2>
+        <p className="muted home-lead">{t.homeHeroLead}</p>
+        <button type="button" className="home-cta" onClick={onOpenApp}>
+          {t.navApp}
+        </button>
+      </section>
+      <section className="panel home-section">
+        <h2>{t.homeHowToTitle}</h2>
+        <ol className="home-howto-list">
+          {howToSteps.map((item, i) => (
+            <li key={i}>{item}</li>
+          ))}
+        </ol>
+      </section>
+      <section className="panel home-section">
+        <h2>{t.homePrivacyTitle}</h2>
+        {privacyBlocks.map((p, i) => (
+          <p key={i} className="muted small home-prose">
+            {p}
+          </p>
+        ))}
+      </section>
+      <section className="panel home-section">
+        <h2>{t.homeReqTitle}</h2>
+        <ul className="home-req-list">
+          {reqItems.map((item, i) => (
+            <li key={i}>{item}</li>
+          ))}
+        </ul>
+      </section>
+    </main>
+  )
 }
 
 const PIPELINE_STEPS = ['load_model', 'transcribe', 'align', 'diarize', 'finalize'] as const
@@ -389,6 +603,20 @@ function App() {
   })
   const clientSessionId = useMemo(() => getClientSessionId(), [])
   const [health, setHealth] = useState<HealthResponse | null>(null)
+  const [mainRoute, setMainRoute] = useState<'home' | 'app'>(() => routeFromHash())
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null)
+  const [authBusy, setAuthBusy] = useState(true)
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [authError, setAuthError] = useState<string | null>(null)
+
+  const goHome = () => {
+    window.location.hash = ''
+  }
+  const goApp = () => {
+    window.location.hash = 'app'
+  }
 
   const [outputDir, setOutputDir] = useState(sessionInit?.outputDir ?? '')
   const [files, setFiles] = useState<File[]>([])
@@ -425,9 +653,38 @@ function App() {
     }
   }, [uiLang])
 
+  useEffect(() => {
+    let cancelled = false
+    const loadMe = async () => {
+      try {
+        const r = await fetch('/api/auth/me')
+        if (!r.ok) {
+          if (!cancelled) setAuthUser(null)
+          return
+        }
+        const me = (await r.json()) as AuthUser
+        if (!cancelled) setAuthUser(me)
+      } catch {
+        if (!cancelled) setAuthUser(null)
+      } finally {
+        if (!cancelled) setAuthBusy(false)
+      }
+    }
+    void loadMe()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const [usageSummary, setUsageSummary] = useState<UsageSummary | null>(null)
   const [usageError, setUsageError] = useState<string | null>(null)
   const [queueCompact, setQueueCompact] = useState(false)
+  const [speakerEditorFile, setSpeakerEditorFile] = useState<string | null>(null)
+  const [speakerLabels, setSpeakerLabels] = useState<string[]>([])
+  const [speakerNames, setSpeakerNames] = useState<Record<string, string>>({})
+  const [speakerEditBusy, setSpeakerEditBusy] = useState(false)
+  const [speakerEditError, setSpeakerEditError] = useState<string | null>(null)
+  const [speakerEditSuccess, setSpeakerEditSuccess] = useState<string | null>(null)
 
   const loadCompleted = useCallback(async () => {
     const dir = outputDir.trim()
@@ -505,6 +762,20 @@ function App() {
 
   useEffect(() => {
     writeSessionSnapshot({ outputDir: outputDir.trim() })
+  }, [outputDir])
+
+  useEffect(() => {
+    const onHash = () => setMainRoute(routeFromHash())
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  useEffect(() => {
+    setSpeakerEditorFile(null)
+    setSpeakerLabels([])
+    setSpeakerNames({})
+    setSpeakerEditError(null)
+    setSpeakerEditSuccess(null)
   }, [outputDir])
 
   useEffect(() => {
@@ -632,6 +903,63 @@ function App() {
     }
   }
 
+  async function openSpeakerEditor(fileName: string) {
+    const dir = outputDir.trim()
+    if (!dir) return
+    setSpeakerEditError(null)
+    setSpeakerEditSuccess(null)
+    setSpeakerEditBusy(true)
+    setSpeakerEditorFile(fileName)
+    try {
+      const q = new URLSearchParams({ output_dir: dir, name: fileName })
+      const r = await fetch(`/api/output/speakers?${q}`)
+      if (!r.ok) {
+        const raw = await r.text()
+        throw new Error(raw || `HTTP ${r.status}`)
+      }
+      const data = (await r.json()) as SpeakersResponse
+      setSpeakerLabels(data.speakers)
+      setSpeakerNames(Object.fromEntries(data.speakers.map((label) => [label, ''])))
+    } catch (e: unknown) {
+      setSpeakerEditError(e instanceof Error ? e.message : t.renameSpeakersFailed)
+      setSpeakerLabels([])
+      setSpeakerNames({})
+      setSpeakerEditorFile(null)
+    } finally {
+      setSpeakerEditBusy(false)
+    }
+  }
+
+  async function saveSpeakerNames() {
+    const dir = outputDir.trim()
+    if (!dir || !speakerEditorFile) return
+    setSpeakerEditError(null)
+    setSpeakerEditSuccess(null)
+    setSpeakerEditBusy(true)
+    try {
+      const r = await fetch('/api/output/rename-speakers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          output_dir: dir,
+          name: speakerEditorFile,
+          names: speakerNames,
+        }),
+      })
+      if (!r.ok) {
+        const raw = await r.text()
+        throw new Error(raw || `HTTP ${r.status}`)
+      }
+      const data = (await r.json()) as RenameSpeakersResponse
+      setSpeakerEditSuccess(`${t.renamedTranscriptSaved}: ${data.name}`)
+      await loadCompleted()
+    } catch (e: unknown) {
+      setSpeakerEditError(e instanceof Error ? e.message : t.renameSpeakersFailed)
+    } finally {
+      setSpeakerEditBusy(false)
+    }
+  }
+
   function parseErrorDetail(raw: string): string {
     try {
       const j = JSON.parse(raw) as { detail?: unknown }
@@ -640,6 +968,40 @@ function App() {
       /* use raw */
     }
     return raw
+  }
+
+  async function submitAuth(e: React.FormEvent) {
+    e.preventDefault()
+    setAuthError(null)
+    try {
+      const r = await fetch(authMode === 'login' ? '/api/auth/login' : '/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: authEmail, password: authPassword }),
+      })
+      const raw = await r.text()
+      if (!r.ok) {
+        throw new Error(parseErrorDetail(raw) || `HTTP ${r.status}`)
+      }
+      const me = JSON.parse(raw) as AuthUser
+      setAuthUser(me)
+      setAuthPassword('')
+      setAuthError(null)
+    } catch (e: unknown) {
+      setAuthError(e instanceof Error ? e.message : t.authFailed)
+    }
+  }
+
+  async function logoutAuth() {
+    setAuthError(null)
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } finally {
+      setAuthUser(null)
+      setQueuedJobs([])
+      setUsageRuns([])
+      setUsageSummary(null)
+    }
   }
 
   async function pickOutputFolder() {
@@ -750,13 +1112,88 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>{t.appTitle}</h1>
-        <p className="tagline">{t.appTagline}</p>
-        <button type="button" className="secondary language-toggle" onClick={() => setUiLang((v) => (v === 'en' ? 'es' : 'en'))}>
-          {t.switchLanguage}
-        </button>
+        <div className="app-header-row">
+          <div className="app-header-titles">
+            <h1>{t.appTitle}</h1>
+            <p className="tagline">{t.appTagline}</p>
+          </div>
+          <div className="app-header-actions">
+            {authUser && <span className="muted small">{t.authWelcome} <code>{authUser.email}</code></span>}
+            {mainRoute === 'app' ? (
+              <button type="button" className="secondary" onClick={goHome}>
+                {t.navHome}
+              </button>
+            ) : (
+              <button type="button" onClick={goApp}>
+                {t.navApp}
+              </button>
+            )}
+            {authUser && (
+              <button type="button" className="secondary" onClick={() => void logoutAuth()}>
+                {t.authLogout}
+              </button>
+            )}
+            <button
+              type="button"
+              className="secondary language-toggle language-toggle--inline"
+              onClick={() => setUiLang((v) => (v === 'en' ? 'es' : 'en'))}
+            >
+              {t.switchLanguage}
+            </button>
+          </div>
+        </div>
       </header>
 
+      {mainRoute === 'home' ? (
+        <HomeView t={t} onOpenApp={goApp} />
+      ) : authBusy ? (
+        <section className="panel">
+          <h2>{t.authTitle}</h2>
+          <p className="muted small">{t.authSigningIn}</p>
+        </section>
+      ) : !authUser ? (
+        <section className="panel">
+          <h2>{t.authTitle}</h2>
+          <p className="muted small">{t.authIntro}</p>
+          <form className="form" onSubmit={submitAuth}>
+            <label className="field">
+              <span>{t.authEmail}</span>
+              <input
+                type="email"
+                value={authEmail}
+                onChange={(e) => setAuthEmail(e.target.value)}
+                autoComplete="username"
+                required
+              />
+            </label>
+            <label className="field">
+              <span>{t.authPassword}</span>
+              <input
+                type="password"
+                value={authPassword}
+                onChange={(e) => setAuthPassword(e.target.value)}
+                autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                minLength={8}
+                required
+              />
+            </label>
+            {authError && (
+              <p className="err small" role="alert">
+                {authError}
+              </p>
+            )}
+            <button type="submit">{authMode === 'login' ? t.authLogin : t.authRegister}</button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => setAuthMode((m) => (m === 'login' ? 'register' : 'login'))}
+            >
+              {authMode === 'login' ? t.authSwitchToRegister : t.authSwitchToLogin}
+            </button>
+          </form>
+        </section>
+      ) : (
+        <>
       <section className="panel">
         <h2>{t.extractTitle}</h2>
         <p className="muted small">
@@ -1093,25 +1530,91 @@ function App() {
           <ul className="file-list">
             {completed.map((item) => (
               <li key={item.path}>
-                <a
-                  className="file-name"
-                  href={transcriptFileUrl(outputDir, item.name)}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <div className="file-list-main">
+                  <a
+                    className="file-name"
+                    href={transcriptFileUrl(outputDir, item.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {item.name}
+                  </a>
+                  <span className="muted small">
+                    {(item.size_bytes / 1024).toFixed(1)} KiB
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="secondary small-btn"
+                  onClick={() => void openSpeakerEditor(item.name)}
+                  disabled={speakerEditBusy}
                 >
-                  {item.name}
-                </a>
-                <span className="muted small">
-                  {(item.size_bytes / 1024).toFixed(1)} KiB
-                </span>
+                  {t.assignSpeakers}
+                </button>
               </li>
             ))}
           </ul>
+        )}
+        {speakerEditorFile && (
+          <div className="speaker-editor">
+            <p className="small">
+              {t.speakerNames} · <code>{speakerEditorFile}</code>
+            </p>
+            {speakerEditBusy && <p className="muted small">{t.loadingSpeakers}</p>}
+            {!speakerEditBusy && speakerLabels.length === 0 && (
+              <p className="muted small">{t.noSpeakersDetected}</p>
+            )}
+            {!speakerEditBusy &&
+              speakerLabels.map((label) => (
+                <label key={label} className="speaker-row">
+                  <code>{label}</code>
+                  <input
+                    type="text"
+                    value={speakerNames[label] ?? ''}
+                    onChange={(e) =>
+                      setSpeakerNames((prev) => ({ ...prev, [label]: e.target.value }))
+                    }
+                    placeholder={t.speakerNamePlaceholder}
+                  />
+                </label>
+              ))}
+            {speakerEditError && (
+              <p className="err small" role="alert">
+                {speakerEditError}
+              </p>
+            )}
+            {speakerEditSuccess && <p className="ok small">{speakerEditSuccess}</p>}
+            <div className="queue-actions">
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  setSpeakerEditorFile(null)
+                  setSpeakerLabels([])
+                  setSpeakerNames({})
+                  setSpeakerEditError(null)
+                  setSpeakerEditSuccess(null)
+                }}
+                disabled={speakerEditBusy}
+              >
+                {t.dismissJob}
+              </button>
+              <button
+                type="button"
+                onClick={() => void saveSpeakerNames()}
+                disabled={speakerEditBusy || speakerLabels.length === 0}
+              >
+                {t.saveSpeakerNames}
+              </button>
+            </div>
+          </div>
         )}
         <button type="button" className="secondary" onClick={() => void loadCompleted()}>
           {t.refreshList}
         </button>
       </section>
+        </>
+      )}
     </div>
   )
 }

@@ -12,6 +12,7 @@ dependencies = [
     "uvicorn[standard]>=0.32.0",
     "whisperx>=3.8.4",
     "sqlalchemy>=2.0.48",
+    "email-validator>=2.3.0",
 ]
 
 [project.optional-dependencies]
@@ -22,6 +23,7 @@ dev = [
 
 [project.scripts]
 transcript = "app.cli:cli_app"
+create-admin = "app.scripts.create_admin:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -1,7 +1,7 @@
 # Product Requirements Document: Transcript App
 
 **Status:** Draft  
-**Last updated:** 2026-04-01 (v0.9 — Phase 2 local UI: progress, ETA, completed extractions)
+**Last updated:** 2026-05-06 (v0.10 — Legal, terms, privacy, and compliance requirements)
 
 ## 1. Summary
 
@@ -50,7 +50,7 @@ Development proceeds in **seven** phases. Later phases build on the core extract
 
 ## 4. Personas
 
-- **Researcher / journalist:** Records interviews; needs Speaker 1 / Speaker 2 style output and export to a chosen folder; signs in to the web app and expects **clear usage and billing** visibility.
+- **Researcher / journalist / Lawyer / Doctor :** Records interviews; needs Speaker 1 / Speaker 2 style output and export to a chosen folder; signs in to the web app and expects **clear usage and billing** visibility.
 - **Operator on shared hosting:** Uses the web deployment; expects the same transcript quality, clear download or save behavior, and **predictable charges** aligned with usage.
 - **Platform administrator:** Onboards users, adjusts **free allowances** or plan flags, investigates **usage** disputes, and suspends or restores accounts.
 
@@ -244,9 +244,48 @@ That document defines **multi-app** self-hosted infrastructure (e.g., **Coolify*
 - **Secrets:** **Hugging Face token**, Stripe keys, DB URLs, Redis—via platform **secrets management** (e.g. Coolify/Doppler), not committed to git.
 - **Scaling:** API and workers scale horizontally where stateless; **GPU workers** scale per capacity; DB and Redis per platform scaling plan.
 
+### 5.16 Legal, terms, privacy, and compliance (user-facing)
+
+This section states **product and documentation requirements** for how users are informed and how they agree to use the product. **Final legal text** (wording, jurisdiction, liability caps, etc.) is owned by counsel; engineering ships the **surfaces** and **versioning** that make policies enforceable and auditable.
+
+#### 5.16.1 Hosted (web) product — required artifacts
+
+For any **internet-accessible** deployment where users **create accounts**, **upload content**, or **pay**, the product must expose and maintain:
+
+| Artifact | Purpose | Notes |
+|----------|---------|--------|
+| **Terms of Service** (ToS) | Rules of use, account termination, acceptable use, limitations, dispute basics, governing law (as advised). | Primary “user agreement” for SaaS; often what people mean by “EULA” for a web app. |
+| **Privacy Policy** | What personal data is collected, why, retention, subprocessors, international transfers (if any), and user rights (region-dependent). | Must align with **actual** data flows: audio, transcripts, usage metrics, auth provider, Stripe, object storage, logs, support access. |
+| **Cookie / tracking notice** | Disclosure and consent where required when the app uses **non-essential** cookies or similar tracking (e.g. analytics, marketing pixels). | If only strictly necessary session cookies, document that; if analytics added later, update notice + UX. |
+| **Payment terms** | How billing, renewals, refunds, and taxes are handled. | May be **sections within ToS** and/or **linked from Stripe Checkout / Customer Portal**; must not contradict what Stripe and the app actually do. |
+
+**EULA vs ToS:** For **downloadable** desktop or on-prem installers, a separate **End User License Agreement** may be used (software license grant). For the **hosted** product, **ToS + Privacy Policy** are the usual pair unless counsel specifies otherwise.
+
+#### 5.16.2 User acceptance and audit (hosted)
+
+- **Sign-up / first paid checkout:** Users must **affirmatively accept** current ToS and Privacy Policy (e.g. checkbox with links to live documents, or equivalent pattern required in target markets).
+- **Material changes:** When policies change materially, product should support **re-notification** or re-acceptance per legal guidance (implementation detail TBD with counsel).
+- **Versioning:** Policies should be **versioned or dated** (e.g. “Last updated” on each document); consider retaining **which version** a user accepted and **when** (for disputes and compliance).
+
+#### 5.16.3 Business / enterprise customers (optional but planned)
+
+- **Data Processing Agreement (DPA):** Offer a **DPA** (or equivalent) when selling to organizations that process personal data of their end users through the service, where required.
+- **BAA / regulated data:** If the product ever targets **HIPAA** or other regulated categories, that is a **separate** commercial and architectural decision (out of scope unless explicitly added).
+
+#### 5.16.4 Local-only product (Phase 2 / CLI)
+
+- **Disclosure:** UX or README should state clearly whether **audio or transcripts leave the device** (local pipeline vs. any cloud API or telemetry).
+- **License:** Distribute under an explicit **open-source license** or **proprietary license**; if proprietary, ship **license terms** appropriate to the distribution channel (installer, package registry, or internal).
+- **Telemetry:** If optional or mandatory **analytics, crash reports, or update checks** are added, document them in Privacy-related copy and settings.
+
+#### 5.16.5 Relationship to other PRD sections
+
+- **Data retention and access** (who can see audio/transcripts, support access) must be **consistent** between Privacy Policy and **§5.5 / §6** operational practices.
+- **Admin console (§5.14):** Administrative access to user content must be described in Privacy Policy within policy.
+
 ## 6. Non-functional requirements
 
-- **Privacy:** Clarify in UX whether audio leaves the device (local-only pipeline vs. cloud APIs). For hosted SaaS, publish **data retention** for audio and transcripts, and **who** can access data (user + admins for support, within policy).
+- **Privacy:** Clarify in UX whether audio leaves the device (local-only pipeline vs. cloud APIs). For hosted SaaS, publish **data retention** for audio and transcripts, and **who** can access data (user + admins for support, within policy)—see **§5.16** for required user-facing documents and acceptance flows.
 - **Security:** Protect credentials and payment data via the **payment provider** (no primary card storage on app servers if using hosted checkout). Apply **rate limiting** and abuse controls on auth and upload endpoints.
 - **Performance:** Define acceptable latency targets per minute of audio once the stack is chosen.
 - **Accessibility:** Keyboard navigation and readable defaults for transcript text.
@@ -274,6 +313,7 @@ That document defines **multi-app** self-hosted infrastructure (e.g., **Coolify*
 - Extraction follows the **WhisperX baseline** in §10 (transcribe → align → diarize → assign speakers).
 - App is **runnable locally** and **deployable to the web** with documented setup; **local development** uses **uv or Poetry** plus **Docker** per §5.5.1 (with **hybrid** native GPU worker on macOS documented where relevant).
 - **Hosted** experience: users **sign in**; **usage** is tracked; **billing** supports **per-transcript** and/or **per-minute** charges; **free allowances** can apply; **admins** can manage users via a **console**.
+- **Hosted** deployments publish **Terms of Service**, **Privacy Policy**, and (where applicable) **cookie/tracking** and **payment** disclosures; new users accept current terms as specified in **§5.16**.
 - **Production** deployment plan aligns with **§5.15** (shared self-hosting platform: Coolify, Traefik/Caddy, Postgres, Redis, MinIO, Stripe, shared auth, workers, observability).
 
 ## 9. Revision history
@@ -289,6 +329,7 @@ That document defines **multi-app** self-hosted infrastructure (e.g., **Coolify*
 | 0.7 | 2025-03-26 | **§1.1** — Delivery phases: Phase 1 CLI (source + output dir); Phase 2 UI (multi-file + output dir); Phase 3 auth and user management |
 | 0.8 | 2025-03-26 | **§1.1** — Phases 4–7: admin panel; internet deploy; payments; app platform (**§5.15**); Phases 1–4 local; Phases 1–6 evaluate stack + iterate on 5–6 before Phase 7 |
 | 0.9 | 2026-04-01 | **§5.4.1** — Phase 2 local UI: progress (phase, %, elapsed), best-effort ETA, SSE/WS/poll; completed extractions list; discovery rule; **§1.1** Phase 2 row updated |
+| 0.10 | 2026-05-06 | **§5.16** — Legal, terms, privacy, and compliance: ToS, Privacy Policy, cookies/tracking, payment terms, acceptance/versioning, DPA note, local vs hosted; **§6** privacy bullet cross-ref; **§8** hosted success criterion for published policies |
 
 ## 10. Recommended implementation: WhisperX pipeline (`transcribe_v2` approach)
 

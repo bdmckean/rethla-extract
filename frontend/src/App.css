@@ -20,6 +20,80 @@
   margin-top: 0.65rem;
 }
 
+.language-toggle--inline {
+  margin-top: 0;
+}
+
+.app-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.app-header-titles {
+  min-width: 0;
+  flex: 1;
+}
+
+.app-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.home-page {
+  margin-top: 0.5rem;
+}
+
+.home-hero h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.home-lead {
+  margin: 0 0 1rem;
+  line-height: 1.45;
+}
+
+.home-cta {
+  font-weight: 600;
+}
+
+.home-section h2 {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.home-prose {
+  line-height: 1.45;
+  margin: 0.5rem 0;
+}
+
+.home-req-list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.15rem;
+  line-height: 1.45;
+}
+
+.home-req-list li {
+  margin: 0.35rem 0;
+}
+
+.home-howto-list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.25rem;
+  line-height: 1.45;
+}
+
+.home-howto-list li {
+  margin: 0.4rem 0;
+}
+
 .panel {
   margin-top: 2rem;
   padding: 1.25rem 1.35rem;
@@ -387,10 +461,16 @@ button.secondary {
 .file-list li {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: 1rem;
   padding: 0.35rem 0;
   border-bottom: 1px solid var(--border);
+}
+
+.file-list-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .file-name {
@@ -406,4 +486,27 @@ button.secondary {
 
 .file-list a.file-name:hover {
   text-decoration: underline;
+}
+
+.small-btn {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.speaker-editor {
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.speaker-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.35rem 0;
+}
+
+.speaker-row input {
+  flex: 1;
 }

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter, Header, Query
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy import desc, func, select
 
+from app.auth import CurrentUser, require_current_user
 from app.db import SessionLocal
 from app.models import ExtractionRun
 
@@ -41,39 +42,28 @@ class RunSummary(BaseModel):
 @router.get("/runs")
 def list_runs(
     limit: int = Query(20, ge=1, le=200),
-    x_client_session: str | None = Header(default=None),
+    user: CurrentUser = Depends(require_current_user),
 ) -> dict[str, list[RunItem] | RunSummary]:
-    session_id = (x_client_session or "").strip() or "anonymous"
+    pred = ExtractionRun.user_id == user.id
     with SessionLocal() as db:
         runs = db.scalars(
-            select(ExtractionRun)
-            .where(ExtractionRun.session_id == session_id)
-            .order_by(desc(ExtractionRun.completed_at), desc(ExtractionRun.created_at))
-            .limit(limit)
+            select(ExtractionRun).where(pred).order_by(desc(ExtractionRun.completed_at), desc(ExtractionRun.created_at)).limit(limit)
         ).all()
 
         total_runs = db.scalar(
-            select(func.count()).select_from(ExtractionRun).where(ExtractionRun.session_id == session_id)
+            select(func.count()).select_from(ExtractionRun).where(pred)
         )
         completed_runs = db.scalar(
-            select(func.count())
-            .select_from(ExtractionRun)
-            .where(ExtractionRun.session_id == session_id, ExtractionRun.status == "completed")
+            select(func.count()).select_from(ExtractionRun).where(pred, ExtractionRun.status == "completed")
         )
         failed_runs = db.scalar(
-            select(func.count())
-            .select_from(ExtractionRun)
-            .where(ExtractionRun.session_id == session_id, ExtractionRun.status == "failed")
+            select(func.count()).select_from(ExtractionRun).where(pred, ExtractionRun.status == "failed")
         )
         total_source_bytes = db.scalar(
-            select(func.coalesce(func.sum(ExtractionRun.source_size_bytes), 0)).where(
-                ExtractionRun.session_id == session_id
-            )
+            select(func.coalesce(func.sum(ExtractionRun.source_size_bytes), 0)).where(pred)
         )
         total_elapsed_sec = db.scalar(
-            select(func.coalesce(func.sum(ExtractionRun.elapsed_sec), 0.0)).where(
-                ExtractionRun.session_id == session_id
-            )
+            select(func.coalesce(func.sum(ExtractionRun.elapsed_sec), 0.0)).where(pred)
         )
 
     return {
